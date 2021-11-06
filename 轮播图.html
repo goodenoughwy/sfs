@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .mian {
+            width: 1367px;
+            height: 568px;
+            position: relative;
+            /* 超出影藏 */
+            overflow: hidden;
+        }
+        
+        .sw {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* 加上动画 */
+            transition: 0.5s ease;
+        }
+        
+        .sw,
+        .sw img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .on {
+            position: absolute;
+            bottom: 5%;
+            right: 50%;
+            display: flex;
+        }
+        
+        .on li {
+            user-select: none;
+            cursor: pointer;
+            list-style: none;
+            margin: 0 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+        
+        .on li:hover,
+        .on li.active {
+            background-color: rgb(14, 13, 13);
+        }
+        
+        .mian span {
+            user-select: none;
+            cursor: pointer;
+            display: block;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: white;
+            color: rgb(8, 6, 6);
+            text-align: center;
+            line-height: 50px;
+            position: absolute;
+        }
+        
+        .left {
+            top: 50%;
+            left: 0;
+        }
+        
+        .right {
+            top: 50%;
+            right: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mian">
+        <div class="sw">
+            <img src="images/5.webp" alt="" />
+            <img src="images/ia_100000002.webp" alt="" />
+        </div>
+        <ul class="on">
+            <li class="active"></li>
+            <li></li>
+        </ul>
+        <span class="left"> < </span>
+        <span class="right"> > </span>
+    </div>
+
+    <script>
+        // 获取装图片的盒子
+        const imgBox = document.querySelector(".sw");
+        // 获取按钮
+        const btns = document.querySelectorAll("span");
+
+        //  获取li标签
+        const lis = document.querySelectorAll(".on li");
+
+        // 复制第一份第一张图片到最后，无缝轮播的关键
+        const copyImg = imgBox.firstElementChild.cloneNode();
+        imgBox.appendChild(copyImg);
+        // 定义图片的位置
+        let index = 0;
+        // 设置节流，让图片切换时间固定
+        let lock = true;
+        // 设置定时器
+        let timer = null;
+
+        // 改变li是不是有active类的方法
+        function changeLi(index) {
+            lis.forEach((li, idx) => {
+                //    先移除所有active
+                if (li.classList.contains("active")) {
+                    li.classList.remove("active");
+                }
+                //  给当前的Li加上
+                if (index == idx) {
+                    li.classList.add("active");
+                }
+            });
+        }
+
+        // li点击事件
+        lis.forEach((li, idx) => {
+            li.onclick = () => {
+                index = idx - 1; //因为最后有一张图片所以坐标要减1
+                btns[1].click(); //切换图片
+                changeLi(index);
+            };
+        });
+        // 按钮点击
+        btns[0].onclick = (_) => {
+            if (!lock) return;
+
+            // 先判断是不是第一张图片
+            if (index == 0) {
+                // 移动到我们复制图片的位置
+                index = imgBox.children.length - 1;
+                // 取消动画效果
+                imgBox.style.transition = "none";
+                imgBox.style.left = `${-index * 1367}px`;
+                // 瞬间有切换到我们复制图片的位置的前一张
+                setTimeout(() => {
+                    index = imgBox.children.length - 2;
+                    //把取消的动画加上
+                    imgBox.style.transition = ".5s ease ";
+                    imgBox.style.left = `${-index * 1367}px`;
+                    changeLi(index);
+                });
+            } else {
+                index--;
+                imgBox.style.left = `${-index * 1367}px`;
+                changeLi(index);
+            }
+
+            lock = false; //关锁
+            setTimeout(() => {
+                // 500毫秒后开锁
+                lock = true;
+            }, 500);
+        };
+        btns[1].onclick = (_) => {
+            if (!lock) return;
+            //    坐标右移
+            index++;
+            //把取消的动画加上
+            imgBox.style.transition = ".5s ease ";
+            // 判断是不是到了我们复制图片的位置的前一张
+            if (index == imgBox.children.length - 1) {
+                // 这时候让坐标回到0，用定时器回到第一张图片
+                setTimeout(() => {
+                    index = 0;
+                    // 取消动画效果，瞬间回到第一张
+                    imgBox.style.transition = "none";
+                    imgBox.style.left = `${-index * 1367}px`;
+                    changeLi(index);
+                }, 500);
+            }
+            // 改变盒子的left
+            imgBox.style.left = `${-index * 1367}px`;
+            changeLi(index);
+            lock = false; //关锁
+            setTimeout(() => {
+                // 500毫秒后开锁
+                lock = true;
+            }, 500);
+        };
+
+        // 轮播方法
+        function autoPlay() {
+            btns[1].click();
+        }
+
+        // 开启定时器
+        timer = setInterval(() => {
+            autoPlay();
+        }, 3000);
+        // 鼠标移入移出图片盒子清除和重新开启定时器
+        imgBox.onmouseover = () => {
+            clearInterval(timer);
+        };
+
+        imgBox.onmouseout = () => {
+            timer = setInterval(() => {
+                autoPlay();
+            }, 3000);
+        };
+        //完成了
+    </script>
+</body>
+
+</html>
